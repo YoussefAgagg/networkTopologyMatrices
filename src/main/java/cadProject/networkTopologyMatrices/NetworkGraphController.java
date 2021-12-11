@@ -393,17 +393,17 @@ public class NetworkGraphController {
 
 	}
 	public boolean validateGraph() {
-		System.out.println("node size "+nodes.size());
+		
 		long treeBranches=branches.stream()
 				.filter(b->!b.isLink())
 				.count();
 		if(treeBranches!=nodes.size()-1)return false;
-		else System.out.println(treeBranches);
+		
 
-		long count=nodes.stream().filter(n->{
-			return n.getLinkBranches().size()+n.getTreeBranches().size()<2;
-		}).count();
-		System.out.println(count);
+		long count=nodes.stream().filter(n->
+			 n.getLinkBranches().size()+n.getTreeBranches().size()<2
+		).count();
+		
 		if(count!=0)return false;
 		return true;
 		
