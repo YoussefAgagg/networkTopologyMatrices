@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -14,13 +17,18 @@ import javafx.geometry.Point2D;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
@@ -31,6 +39,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 import javafx.scene.shape.QuadCurve;
+import javafx.util.StringConverter;
 
 public class NetworkGraphController {
 
@@ -50,8 +59,24 @@ public class NetworkGraphController {
 	private Pane graphPaneContainer;
 
 	@FXML
+	private TableView<Branch> branchesTable;
+
+	@FXML
+	private TableColumn<Branch, String> nameColumn;
+
+	@FXML
+	private TableColumn<Branch, Double> CurrentColumn;
+
+	@FXML
+	private TableColumn<Branch, Double> voltageColumn;
+
+	@FXML
+	private TableColumn<Branch, String> impedanceColumn;
+
+	@FXML
 	private TextArea resultTextArea;
 
+	private ObservableList<Branch> tableListItems = FXCollections.observableArrayList();
 	private Point2D branchStartedPoint;
 	private Point2D branchEndedPoint;
 
@@ -91,6 +116,88 @@ public class NetworkGraphController {
 		graphPaneContainer.getChildren().add(moveCircle);
 		resultTextArea.managedProperty().bind(resultTextArea.visibleProperty());
 
+		branchesTable.setItems(tableListItems);
+		nameColumn.setCellValueFactory( new PropertyValueFactory<>("branchName") );
+		CurrentColumn.setCellValueFactory( new PropertyValueFactory<>("current") );
+		voltageColumn.setCellValueFactory( new PropertyValueFactory<>("voltage") );
+		impedanceColumn.setCellValueFactory( arge->{
+			Branch b=arge.getValue();
+			String impedance=b.getImpedance()+ (b.isAdmittance()?"s":"");
+			return new SimpleObjectProperty<String>(impedance);
+		} );
+		makeTabelEditable();
+
+
+	}
+
+	private StringConverter<Double> converter=new StringConverter<Double>() {
+
+		@Override
+		public String toString(Double object) {
+			return String.valueOf(object);
+		}
+
+		@Override
+		public Double fromString(String string) {
+			Double d=null;
+			try {
+				d=Double.parseDouble(string);
+			} catch (Exception e) {
+				showErrorDialog(e);
+			}
+			return d;
+		}
+	};
+
+	private void makeTabelEditable() {
+		CurrentColumn.setCellFactory(
+				TextFieldTableCell.forTableColumn(converter));
+
+		CurrentColumn.setOnEditCommit(
+				(TableColumn.CellEditEvent<Branch, Double> t) ->{
+					Branch b= t.getTableView().getItems().get(t.getTablePosition().getRow());
+					if(t.getNewValue()!=null) {
+						b.setCurrent(t.getNewValue());
+					}else {
+						branchesTable.refresh();
+					}
+				}
+				);
+		voltageColumn.setCellFactory(
+				TextFieldTableCell.forTableColumn(converter));
+
+		voltageColumn.setOnEditCommit(
+				(TableColumn.CellEditEvent<Branch, Double> t) ->
+				{
+					Branch b= t.getTableView().getItems().get(
+							t.getTablePosition().getRow());
+					if(t.getNewValue()!=null) {
+						b.setVoltage(t.getNewValue());
+					}else {
+						branchesTable.refresh();
+					}
+				});
+		impedanceColumn.setCellFactory(
+				TextFieldTableCell.forTableColumn());
+
+		impedanceColumn.setOnEditCommit(
+				(TableColumn.CellEditEvent<Branch, String> t) ->{
+					Branch b= t.getTableView().getItems().get(
+							t.getTablePosition().getRow());
+					String s=t.getNewValue();
+					if(s.endsWith("s")) {
+						s=s.substring(0, s.indexOf("s"));
+						b.setAdmittance(true);
+					}
+					try {					
+						b.setImpedance(Double.parseDouble(s));
+
+					} catch (Exception e) {
+						branchesTable.refresh();
+						showErrorDialog(e);
+					}
+				});
+
 	}
 	@FXML
 	void clearButtonClicked(ActionEvent event) {
@@ -105,14 +212,15 @@ public class NetworkGraphController {
 		graphPaneContainer.getChildren().add(moveCircle);
 		branchStartedPoint=branchEndedPoint=null;
 		resultTextArea.setVisible(false);
+		tableListItems.clear();
 
 	}
 
 	@FXML
 	void cutSetButttonClicked(ActionEvent event) {
-
+		System.out.println(branches);
 		if(validateGraph()) {
-			Task<String>task=new GenerateTieCutSetMatrices(branches, nodes, false);
+			Task<String>task=new GenerateTieCutSetMatrices(branches, false);
 			task.setOnSucceeded(v->{
 				resultTextArea.setVisible(true);
 				resultTextArea.setText(task.getValue());
@@ -164,19 +272,7 @@ public class NetworkGraphController {
 						if(!branchEndedPoint.equals(branchStartedPoint)) {
 							branch.setToNode(node);
 							branchData();
-							if(graphElementSelected==GraphElement.BRANCH) {
-
-								drawBranch(branchStartedPoint, branchEndedPoint,false);
-
-
-							}
-							else if(graphElementSelected==GraphElement.LINK) {
-								branch.setLink(true);
-								drawBranch(branchStartedPoint, branchEndedPoint,true);
-
-
-							}
-
+							drawBranch(branchStartedPoint, branchEndedPoint,graphElementSelected==GraphElement.LINK);
 						}
 						branchEndedPoint=null;
 						branchStartedPoint=null;
@@ -191,13 +287,14 @@ public class NetworkGraphController {
 	}
 
 	private void drawBranch(Point2D p1, Point2D p2, boolean isDashed) {
+		branch.setLink(isDashed);
 		moveCircle.setVisible(true);
 		//Drawing a quadratic curve
 		qudraticCurve = new QuadCurve();
 		branchLable=new Label(letter++ +"");
 		paneNodes.add(qudraticCurve);
 		paneNodes.add(branchLable);
-		
+
 		qudraticCurve.setStartX(p1.getX());
 		qudraticCurve.setStartY(p1.getY());
 
@@ -214,7 +311,7 @@ public class NetworkGraphController {
 		double y=p1.getY();
 		if(isDashed)
 			qudraticCurve.getStrokeDashArray().addAll(2d);
-		
+
 		qudraticCurve.setControlX(x);
 		qudraticCurve.setControlY(y);
 		qudraticCurve.setEndX(p2.getX());
@@ -246,7 +343,7 @@ public class NetworkGraphController {
 		resistanceTextField.setPromptText("branch Impedance or admittance");
 
 		dialogPane.setContent(new VBox(8, currentTextField, voltageTextField, resistanceTextField));
-		
+
 		final Button btOk = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
 
 		btOk.addEventFilter(
@@ -260,8 +357,9 @@ public class NetworkGraphController {
 						if(!voltageTextField.getText().isBlank())
 							voltage=Double.parseDouble(voltageTextField.getText());
 						var impedance=0d;
-						if(!resistanceTextField.getText().isBlank()) {
-							String s=resistanceTextField.getText();
+
+						String s=resistanceTextField.getText();
+						if(!s.isBlank()) {
 							if(s.endsWith("s")) {
 								s=s.substring(0, s.indexOf("s"));
 								branch.setAdmittance(true);
@@ -280,8 +378,9 @@ public class NetworkGraphController {
 							branch.getToNode().getTreeBranches().add(branch);
 						}
 						branches.add(branch);
+						tableListItems.add(branch);
 					}catch (Exception e) {
-						
+
 						showErrorDialog(e);
 						event.consume();
 
@@ -315,7 +414,7 @@ public class NetworkGraphController {
 	@FXML
 	void tieSetButtonClicked(ActionEvent event) {
 		if(validateGraph()) {
-			Task<String>task=new GenerateTieCutSetMatrices(branches, nodes, true);
+			Task<String>task=new GenerateTieCutSetMatrices(branches, true);
 			task.setOnSucceeded(v->{
 
 				resultTextArea.setVisible(true);
@@ -337,6 +436,7 @@ public class NetworkGraphController {
 			if(paneNodes.get(paneNodes.size()-1)instanceof Arrow) {
 				removeElement(true);
 				Branch b=branches.remove(branches.size()-1);
+				tableListItems.remove(b);
 				if(b.isLink()) {
 					b.getFromNode().getLinkBranches().remove(b);
 					b.getToNode().getLinkBranches().remove(b);
@@ -393,20 +493,20 @@ public class NetworkGraphController {
 
 	}
 	public boolean validateGraph() {
-		
+
 		long treeBranches=branches.stream()
 				.filter(b->!b.isLink())
 				.count();
 		if(treeBranches!=nodes.size()-1)return false;
-		
+
 
 		long count=nodes.stream().filter(n->
-			 n.getLinkBranches().size()+n.getTreeBranches().size()<2
-		).count();
-		
+		n.getLinkBranches().size()+n.getTreeBranches().size()<2
+				).count();
+
 		if(count!=0)return false;
 		return true;
-		
+
 	}
 	public void close() {
 		executorService.shutdown();
