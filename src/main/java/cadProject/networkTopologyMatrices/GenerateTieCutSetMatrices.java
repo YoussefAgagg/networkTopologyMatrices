@@ -1,5 +1,6 @@
 package cadProject.networkTopologyMatrices;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,30 +11,31 @@ import javafx.concurrent.Task;
 
 public class GenerateTieCutSetMatrices extends Task<String>{
 	private List<Branch>branchs;
-	private List<Node>nodes;
-	private boolean useTieSet;
-	private List<Branch>Branchesrder;
-	private CutTieSetMatrix calVoltagesAndCurrents;
+	private List<Branch>treeBranches;
 	private List<Branch> links;
+	private boolean useTieSet;
+	private List<Branch>branchesOrder;
+	private CutTieSetMatrix callculateVoltagesAndCurrents;
+	
 	private List<String>branchesName;
 
 
-	public GenerateTieCutSetMatrices(List<Branch> branchs, List<Node> nodes, boolean useTieSet) {
+	public GenerateTieCutSetMatrices(List<Branch> branchs, boolean useTieSet) {
 
 		this.branchs = branchs;
-		this.nodes = nodes;
 		this.useTieSet = useTieSet;
-		Branchesrder=branchs.stream().filter(b->!b.isLink())
+		branchesOrder=new ArrayList<>();
+		treeBranches=branchs.stream().filter(b->!b.isLink())
 				.collect(Collectors.toList());		
 		links=branchs.stream().filter(b->b.isLink())
 				.collect(Collectors.toList());
+		branchesOrder.addAll(treeBranches);
+		branchesOrder.addAll(links);
 
-		Branchesrder.addAll(links);
-
-		calVoltagesAndCurrents=new CutTieSetMatrix();
-		branchesName=Branchesrder.stream()
+		branchesName=branchesOrder.stream()
 				.map(b->b.getBranchName())
 				.collect(Collectors.toList());
+		callculateVoltagesAndCurrents=new CutTieSetMatrix();
 
 	}
 	public boolean loopBranchesValues(Node start,Node end,Map<Branch,Integer>branches) {
@@ -81,14 +83,19 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 		double []Yb=getZorYMatrix();
 		double []Ib=getIbMatrix();
 		double[]Eb=getEbMatrix();
-		String result=calVoltagesAndCurrents.useCutSet(C, branchs.size(), Yb, Ib, Eb,branchesName);
+		String result=callculateVoltagesAndCurrents.useCutSet(C, branchs.size(), Yb, Ib, Eb,branchesName);
 		return result;
 	}
 	private double[] getCutSetMatrix() {
 		int size=branchs.size();
-		List<Node>cutNodes=nodes.stream()
-				.filter(n->n.getTreeBranches().size()==1)
+		List<Node>cutNodes=treeBranches.stream()
+				.filter(b->(b.getFromNode().getTreeBranches().size()==1
+							|| b.getToNode().getTreeBranches().size()==1))
+				.map(b->
+					 b.getFromNode().getTreeBranches().size()==1 ?b.getFromNode():b.getToNode()
+				)
 				.collect(Collectors.toList());
+		cutNodes.stream().findFirst();
 		double[]C=new double[size*cutNodes.size()];
 		if(branchs.size()-links.size()!=cutNodes.size())throw new UnsupportedOperationException("the number of cuts should be equals to the twigs");
 		int i=0;
@@ -97,7 +104,7 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 
 			cutSetBranchesValues(n, map);
 
-			for(Branch branch:Branchesrder) {
+			for(Branch branch:branchesOrder) {
 				C[i++]=map.getOrDefault(branch, 0);
 			}
 
@@ -110,14 +117,14 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 		double []Zb=getZorYMatrix();
 		double []Ib=getIbMatrix();
 		double[]Eb=getEbMatrix();
-		String result=calVoltagesAndCurrents.useTieSet(B, branchs.size(), Zb, Ib, Eb,branchesName);
+		String result=callculateVoltagesAndCurrents.useTieSet(B, branchs.size(), Zb, Ib, Eb,branchesName);
 		return result;
 	}
 	private double[] getEbMatrix() {
 		int size=branchs.size();
 		double[]Eb=new double[size];
 		int i=0;
-		for(Branch b:Branchesrder) {
+		for(Branch b:branchesOrder) {
 			Eb[i++]=b.getVoltage();
 
 		}
@@ -127,7 +134,7 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 		int size=branchs.size();
 		double[]Ib=new double[size];
 		int i=0;
-		for(Branch b:Branchesrder) {
+		for(Branch b:branchesOrder) {
 			Ib[i++]=b.getCurrent();
 
 		}
@@ -137,7 +144,7 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 		int size=branchs.size();
 		double[]Z=new double[size*size];
 		int i=0;
-		for(Branch b:Branchesrder) {
+		for(Branch b:branchesOrder) {
 			var r=b.getImpedance();
 			if(!useTieSet) {
 				if(!b.isAdmittance()) {
@@ -165,7 +172,7 @@ public class GenerateTieCutSetMatrices extends Task<String>{
 			boolean vaildLoop=loopBranchesValues(b.getToNode()
 					, b.getFromNode(), map);
 			if(!vaildLoop)throw new UnsupportedOperationException("draw valid graph");
-			for(Branch branch:Branchesrder) {
+			for(Branch branch:branchesOrder) {
 				B[i++]=map.getOrDefault(branch, 0);
 			}
 
