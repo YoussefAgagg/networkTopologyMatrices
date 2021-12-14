@@ -10,10 +10,10 @@ draw the graph using the elements (node - branch - link):
  2. twig(branch) or link: select (branch or link) then click in the start node and then click in the end node, after that a pop-up dialog will appear to provide the current,    voltage, and (impedances or admittances) for the branch.
  note: for admittances add 's' to the end. 
 ## screenshots of the app
-![image](https://user-images.githubusercontent.com/62031222/145680690-d34f52a9-9209-40af-94b3-e3fae99af11f.png)
-![image](https://user-images.githubusercontent.com/62031222/145680561-87eb486c-21ba-4a18-a15d-bc7562862dfa.png)
-![image](https://user-images.githubusercontent.com/62031222/145680549-0cb936b9-dd9d-496c-8287-b7c1b9db086c.png)
-![image](https://user-images.githubusercontent.com/62031222/145680537-e72becaf-71b2-4dd9-8aea-775b365a1ac3.png)
+![image](https://user-images.githubusercontent.com/62031222/146055947-19e17e88-ab44-4d01-8d75-8b4a6e171454.png)
+![image](https://user-images.githubusercontent.com/62031222/146056633-7dc3c641-82b2-4aff-b29e-f31ad89fe08e.png)
+![image](https://user-images.githubusercontent.com/62031222/146056763-20c1797b-c9e3-4576-bfa6-0c09306be5cb.png)
+
 
 
 

@@ -4,6 +4,8 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.HBox?>
@@ -11,7 +13,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="640.0" style="-fx-background-color: gray;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cadProject.networkTopologyMatrices.NetworkGraphController">
+<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="549.0" prefWidth="791.0" style="-fx-background-color: gray;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cadProject.networkTopologyMatrices.NetworkGraphController">
    <children>
       <HBox alignment="CENTER" prefWidth="200.0" spacing="20.0">
          <children>
@@ -41,11 +43,19 @@
       </HBox>
       <HBox fx:id="vbox" VBox.vgrow="ALWAYS">
          <children>
-            <ScrollPane fitToWidth="true" prefHeight="400.0" prefWidth="605.0" HBox.hgrow="ALWAYS">
+            <ScrollPane fx:id="scroll" prefHeight="400.0" prefWidth="482.0" HBox.hgrow="ALWAYS">
                <content>
-                  <Pane fx:id="graphPaneContainer" onMousePressed="#paneContainerMousePressed" prefHeight="500.0" prefWidth="630.0" style="-fx-border-color: black;" />
+                  <Pane fx:id="graphPaneContainer" onMousePressed="#paneContainerMousePressed" prefHeight="720.0" prefWidth="1080.0" style="-fx-border-color: black;" />
                </content>
             </ScrollPane>
+            <TableView fx:id="branchesTable" editable="true" maxWidth="-Infinity" prefHeight="263.0" HBox.hgrow="NEVER">
+              <columns>
+                <TableColumn fx:id="nameColumn" prefWidth="44.0" text="Bname" />
+                <TableColumn fx:id="CurrentColumn" prefWidth="47.0" text="current" />
+                  <TableColumn fx:id="voltageColumn" prefWidth="51.0" text="voltage" />
+                  <TableColumn fx:id="impedanceColumn" prefWidth="135.0" text="impedance/admittance" />
+              </columns>
+            </TableView>
          </children>
       </HBox>
       <TextArea fx:id="resultTextArea" editable="false" focusTraversable="false" prefHeight="300.0" prefWidth="200.0" visible="false" wrapText="true" VBox.vgrow="ALWAYS">
