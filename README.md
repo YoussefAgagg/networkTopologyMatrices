@@ -2,9 +2,9 @@ the purpose of this project is to calculate the current and the voltage in every
 ## Technologies
 * java 11
 * javafx
-* [lombok] (https://github.com/projectlombok/lombok)
+* [lombok](https://github.com/projectlombok/lombok)
 
-##setup
+### setup
  [Setting up Lombok with Eclipse and Intellij](https://www.baeldung.com/lombok-ide)
 
 ## how to use
