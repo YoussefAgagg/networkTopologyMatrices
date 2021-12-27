@@ -218,7 +218,7 @@ public class NetworkGraphController {
 
 	@FXML
 	void cutSetButttonClicked(ActionEvent event) {
-		System.out.println(branches);
+		
 		if(validateGraph()) {
 			Task<String>task=new GenerateTieCutSetMatrices(branches, false);
 			task.setOnSucceeded(v->{
