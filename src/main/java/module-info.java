@@ -5,9 +5,7 @@ module cadProject.networkTopologyMatrices {
 	requires ejml.core;
 	requires javafx.base;
 	requires javafx.graphics;
-	requires lombok;
-	
-
+    requires static lombok;
 
 
     opens cadProject.networkTopologyMatrices to javafx.fxml;
